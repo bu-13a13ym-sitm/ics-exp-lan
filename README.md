@@ -7,12 +7,14 @@ NW experiment
    (gitがインストールされてなければzipをダウンロードして解凍する)
 
 ## コンパイル方法
+### 両方:
+* make
+
 ### throughput.out:
 * make th
 
 ### ping.out:
-* make pi  
-  (ping.cは準備できてないのでまだ実行しないでください)
+* make pi
 
 ## 実行方法
 ### throughput.out:
