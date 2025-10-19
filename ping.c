@@ -12,8 +12,7 @@
 
 #define MAX_EVENTS 16
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
     char *port_num_str = UDP_SERVER_PORT_STR;        /* ポート番号 */
 
     int sock;                       /* ソケットディスクリプタ */

@@ -110,6 +110,7 @@ main(int argc, char** argv)
 
     addrLen = sizeof(clientAddr);
 
+    int cnt = 0;
     while(1) {
         /* データを受信 */
         n = recvfrom(from_sock, buf, BUF_LEN, 0,
@@ -124,11 +125,13 @@ main(int argc, char** argv)
             continue;  /* データなし */
         }
 
-        /* 受信したデータを表示 */
+        cnt += n;
+        /* 受信したデータを表示 *//*
         printf("Received %d bytes from %s:%d\n",
                n,
                inet_ntoa(clientAddr.sin_addr),
-               ntohs(clientAddr.sin_port));
+               ntohs(clientAddr.sin_port));*/
+        //printf("%d\n", cnt);
 
         /* 転送先にデータを送信 */
         if(sendto(to_sock, buf, n, 0, res->ai_addr, res->ai_addrlen) != n) {
@@ -136,7 +139,7 @@ main(int argc, char** argv)
             break;
         }
 
-        printf("Forwarded %d bytes to %s:%s\n\n", n, forward_host, forward_port);
+        //printf("Forwarded %d bytes to %s:%s\n\n", n, forward_host, forward_port);
     }
 
     /* クリーンアップ */
