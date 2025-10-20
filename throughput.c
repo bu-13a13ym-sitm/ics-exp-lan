@@ -12,7 +12,65 @@
 
 #define MAX_EVENTS 16
 
-int main(int argc, char **argv) {
+#define SIZE 5
+#define MAX_PATHS 100
+
+double edge[SIZE][SIZE];
+
+char ip_addresses[5][5][128] = {
+    {"127.0.0.1", "172.20.0.20", "172.21.0.30", "172.22.0.40", "172.23.0.50"},
+    {"172.20.0.10", "127.0.0.1", "172.24.0.30", "172.25.0.40", "172.26.0.50"},
+    {"172.21.0.10", "172.24.0.20", "127.0.0.1", "172.27.0.40", "172.28.0.50"},
+    {"172.22.0.10", "172.25.0.20", "172.27.0.30", "127.0.0.1", "172.29.0.50"},
+    {"172.23.0.10", "172.26.0.20", "172.28.0.30", "172.29.0.40", "127.0.0.1"}
+};
+
+typedef struct {
+    int nodes[SIZE + 1]; // 経路（ノード番号の配列）
+    int length;          // 経路の長さ
+    double weight;        // 経路の重み
+} PathInfo;
+
+PathInfo paths[MAX_PATHS];
+int path_count = 0;
+
+// 経路を再帰的に列挙
+void enumerate_paths(int current, int goal, bool visited[SIZE], int route[SIZE + 1], int depth, float weight) {
+    visited[current] = true;
+    route[depth] = current;
+
+    if (current == goal) {
+        // 経路を保存
+        paths[path_count].length = depth + 1;
+        paths[path_count].weight = weight;
+        for (int i = 0; i <= depth; i++) {
+            paths[path_count].nodes[i] = route[i];
+        }
+        path_count++;
+    } else {
+        for (int next = 0; next < SIZE; next++) {
+            if (!visited[next] && edge[current][next] > 0.0) {
+                enumerate_paths(next, goal, visited, route, depth + 1, weight + edge[current][next]);
+            }
+        }
+    }
+    visited[current] = false;
+}
+
+// 重みで昇順ソート
+int compare_paths(const void *a, const void *b) {
+    float wa = ((PathInfo*)a)->weight;
+    float wb = ((PathInfo*)b)->weight;
+    if (wa < wb) return -1; // 小さい順に並び替え。大きい順なら逆
+    if (wa > wb) return 1;
+    return 0;
+}
+
+
+
+int main(int argc, char **argv)
+{
+    double throughputs[5][5] = {{0.0}};
     char *port_num_str = UDP_SERVER_PORT_STR;        /* ポート番号 */
 
     int sock;                       /* ソケットディスクリプタ */
@@ -46,7 +104,6 @@ int main(int argc, char **argv) {
         case ('c'):
             printf("started as client\n\n");
 
-            double throughputs[5][5] = {{0.0}};
 
             for (int i = 1; i <= 5; i++) {
                 throughputs[i - 1][i - 1] = -1;
@@ -443,6 +500,39 @@ int main(int argc, char **argv) {
             
             break;
     }
+    
+    int start = 2; // ノード3
+    int goal = 0;  // ノード1
+    bool visited[SIZE] = {false};
+    int route[SIZE + 1];
+
+    for (int i = 0; i < SIZE; i++) {
+        for (int j = 0; j < SIZE; j++) {
+            if (i != j) {
+                edge[i][j] = 1 / throughputs[i][j] * 1000*1000;
+            }
+        }
+    }
+
+    enumerate_paths(start, goal, visited, route, 0, 0.0);
+
+    // 16経路のみを対象にする
+    if (path_count > 16) path_count = 16;
+
+    qsort(paths, path_count, sizeof(PathInfo), compare_paths);
+
+    printf("重みが小さい順にすべての経路を出力します（ノード番号は1始まり）:\n");
+    for (int i = 0; i < path_count; i++) {
+        printf("重み: %.5f, ルート: ", paths[i].weight);
+        for (int j = 0; j < paths[i].length; j++) {
+            printf("%d", paths[i].nodes[j] + 1);
+            if (j < paths[i].length - 1) printf("->");
+        }
+        printf("\n");
+    }
+    // paths[i]に各経路の情報が格納されている
+    // paths[i].nodesに経路（ノードの番号の配列）、paths[i].lengthに経路の長さ、paths[i].weightに経路の重みが入っている
+
 
     return 0;
 }
